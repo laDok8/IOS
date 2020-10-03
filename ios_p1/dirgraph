@@ -1,0 +1,166 @@
+#!/bin/sh
+export POSIXLY_CORRECT=yes
+IFS="
+"
+
+
+var_write ()
+{
+ printf "$1"
+ i=$2
+while [ "$i" -ne 0 ]; do
+	printf "#"
+	i=$(expr $i - 1)
+done
+echo ""
+}
+
+FILE_ERE=" "
+##options
+while getopts :i:n o
+do
+	case "$o" in
+	i) FILE_ERE="$OPTARG";;
+	n) n=true;;
+	*)echo "invalid arg" 1>&2
+		exit 1;;
+	esac
+done
+
+##shifting useles arguments
+if [ "$FILE_ERE" != " " ]; then
+	shift 2
+fi
+if [ "$n" = true ]; then
+	shift 1
+fi
+
+##chybi FILE_ERE za -i
+if [ "$FILE_ERE" = "-n" ] || [ "$FILE_ERE" = "n" ];then
+	echo "missing FILE_ERE" 1>&2
+	exit 1
+fi
+
+##file not valid / file not chosen -> default option
+if [ "$#" -eq 0 ]; then
+	path="."
+elif [ -d "$1" ] ;then
+	path="$1"
+else
+	echo "DIR does not exist " 1>&2
+	exit 1
+fi
+
+if [ "$FILE_ERE" = "/" ];then
+	echo "FILE_ERE root error" 1>&2
+	exit 1
+fi
+
+
+NFIL=0
+v1=0
+v2=0
+v3=0
+v4=0
+v5=0
+v6=0
+v7=0
+v8=0
+v9=0
+
+
+#symlinks are < 100B
+for fil in `find $path -type l 2>/dev/null| grep -vE "$FILE_ERE" 2>/dev/null`
+do
+	if [ "$?" -ne 0 ]; then
+		echo "symlink error" 1>&2
+		exit 1
+	fi
+
+	NFIL=`expr $NFIL + 1`
+	v1=$(expr $v1 + 1)
+
+done
+
+#files
+for fil in `find $path -type f 2>/dev/null| grep -vE "$FILE_ERE" 2>/dev/null `
+do
+	##something went wrong
+	if [ "$?" -ne 0 ]; then
+		echo "file error" 1>&2
+		exit 1
+	fi
+
+	NFIL=`expr $NFIL + 1`
+	SIZ=`ls -l "$fil" | awk '{print $5}'`
+	if [ "$SIZ" -lt 100 ]; then
+		v1=$(expr $v1 + 1)
+	elif [ "$SIZ" -lt 1024 ]; then
+		v2=$(expr $v2 + 1)
+	elif [ "$SIZ" -lt 10240 ]; then
+		v3=$(expr $v3 + 1)
+	elif [ "$SIZ" -lt 102400 ]; then
+		v4=$(expr $v4 + 1)
+	elif [ "$SIZ" -lt 1048576 ]; then
+		v5=$(expr $v5 + 1)
+	elif [ "$SIZ" -lt 10485760 ]; then
+		v6=$(expr $v6 + 1)
+	elif [ "$SIZ" -lt 104857600 ]; then
+		v7=$(expr $v7 + 1)
+	elif [ "$SIZ" -lt 1073741824 ]; then
+		v8=$(expr $v8 + 1)
+	else
+		v9=$(expr $v9 + 1)
+	fi	
+done
+
+#v term -9 kvuli stringu
+if [ -t 1 ]; then
+	ssize=`tput cols` || ssize=79
+else
+	ssize=79
+fi
+##compensate for start text
+	ssize=$(expr $ssize - 12)
+	size="$ssize"
+
+##normalizace
+if [ "$n" = "true" ]; then
+	for i in $v1 $v2 $v3 $v4 $v5 $v6 $v7 $v8 $v9
+	do
+		if [ "$i" -gt "$size" ]; then
+			size=$i;
+		fi
+	done
+	if [ "$size" -gt  "$ssize" ]; then
+		v1=$(expr $v1 \* $ssize / $size)
+		v2=$(expr $v2 \* $ssize / $size)
+		v3=$(expr $v3 \* $ssize / $size)
+		v4=$(expr $v4 \* $ssize / $size)
+		v5=$(expr $v5 \* $ssize / $size)
+		v6=$(expr $v6 \* $ssize / $size)
+		v7=$(expr $v7 \* $ssize / $size)
+		v8=$(expr $v8 \* $ssize / $size)
+		v9=$(expr $v9 \* $ssize / $size)
+	fi
+fi
+
+echo "Root directory: $path"
+echo "Directories: `find $path -type d 2>/dev/null | grep -vE "$FILE_ERE" | wc -l 2>/dev/null`"
+if [ "$?" -ne 0 ]; then
+		echo "directory error" 1>&2
+		exit 1
+fi
+echo "All files: $NFIL"
+echo "File size histogram:"
+var_write "  <100 B  : " "$v1"
+var_write "  <1 KiB  : " "$v2"
+var_write "  <10 KiB : " "$v3"
+var_write "  <100 KiB: " "$v4"
+var_write "  <1 MiB  : " "$v5"
+var_write "  <10 MiB : " "$v6"
+var_write "  <100 MiB: " "$v7"
+var_write "  <1 GiB  : " "$v8"
+var_write "  >=1 GiB : " "$v9"
+
+exit 0
