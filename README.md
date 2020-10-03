@@ -186,7 +186,7 @@ iii. poté tiskneA:NAME:ends onfirmation:NE:NC:NB.Poznámka k tomuto vý-stupu: 
 6. Pokud nebyly soudcem zpracovány všechny procesy přistěhovalc ̊u (PI), pokračuje bodem 2. Vopačném případě se ukončí.
 7. Pokud byly soudcem zpracovány všechny procesy přistěhovalců (PI), proces soudce se ukončí a tiskne A:NAME:finishes.
 
-#bonus projekt 2
+# bonus projekt 2
 Přepínače
 - aplikace bude spuštěna s přepínačem-b(bude vždy na prvním místě)
 - hned za přepínačem-bbude doba trvání běhu aplikace (RT) v ms<1,7000>
